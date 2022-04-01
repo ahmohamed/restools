@@ -16,7 +16,6 @@ Imports:
     plyr,
     desc,
     tools,
-    vissE,
     edgeR,
     limma,
     ggplot2,
