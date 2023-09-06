@@ -122,12 +122,11 @@ plotRLE_intl <- function(plotdf, sdata, rl, ...) {
 
   #build plot
   p1 = ggplot2::ggplot(plotdf, aes(x = x, y = middle, group = x, !!!aesmap)) +
-    ggplot2::geom_boxplot(
-      aes(ymin = ymin, ymax = ymax, upper = upper, middle = middle, lower = lower),
-      stat = 'identity') +
+    do.call(function(...) ggplot2::geom_boxplot(
+        aes(ymin = ymin, ymax = ymax, upper = upper, middle = middle, lower = lower),
+        stat = 'identity', ...), defaultmap) + 
     ggplot2::geom_hline(yintercept = 0, colour = 2, lty = 2) +
     ggplot2::ylab('Relative log expression') +
-    ggplot2::update_geom_defaults('boxplot', defaultmap) +
     vissE::bhuvad_theme(rl) +
     ggplot2::theme(axis.text.x = element_blank())
 

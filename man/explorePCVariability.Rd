@@ -5,6 +5,7 @@
 \alias{explorePCVariability,DGEList-method}
 \alias{explorePCVariability,ExpressionSet-method}
 \alias{explorePCVariability,SummarizedExperiment-method}
+\alias{getPCVariability,SummarizedExperiment-method}
 \title{Compute and plot the results of a PCA analysis on gene expression data}
 \usage{
 explorePCVariability(edata, annots, maxdim = 25, precomputed = NULL)
@@ -14,6 +15,8 @@ explorePCVariability(edata, annots, maxdim = 25, precomputed = NULL)
 \S4method{explorePCVariability}{ExpressionSet}(edata, annots, maxdim = 25, precomputed = NULL)
 
 \S4method{explorePCVariability}{SummarizedExperiment}(edata, annots, maxdim = 25, precomputed = NULL)
+
+\S4method{getPCVariability}{SummarizedExperiment}(edata, annots, maxdim = 25, precomputed = NULL)
 }
 \arguments{
 \item{edata}{a DGEList, SummarizedExperiment or ExpressionSet object

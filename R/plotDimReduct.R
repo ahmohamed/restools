@@ -330,7 +330,92 @@ plotDR_intl <- function(drdf, sdata, rl, ...) {
 
   # tidystyle recommends no explicit return statements at end of functions
   ggplot2::ggplot(plotdf, ggplot2::aes(!!x, !!y, !!!aesmap)) +
-    ggplot2::geom_point() +
-    ggplot2::update_geom_defaults('point', defaultmap) +
+    do.call(ggplot2::geom_point, defaultmap) + 
     vissE::bhuvad_theme(rl)
+}
+
+#' @export
+plotPCAbiplot <- function(spe_object, n_loadings = 10,
+                          dims = c(1, 2), precomputed = NULL, assay = 1,
+                          arrow_x = 0, arrow_y = 0,
+                          ...) {
+  caculate_coor_end <- function(x, r, f = 1.5) {
+    xend <- x * r * f
+    return(xend)
+  }
+  # compute PCA
+  if (is.null(precomputed)) {
+    pca_object <- calcPCA(SummarizedExperiment::assay(spe_object, assay), dims)
+  } else {
+    pca_object <- checkPrecomputedPCA(spe_object, precomputed)
+  }
+
+  loadings <- attr(pca_object, "rotation")
+
+  if (is(n_loadings, "numeric")) {
+    pc1_genes <- loadings %>%
+      as.data.frame() %>%
+      arrange(-abs(!!sym(paste0("PC", dims[1])))) %>%
+      .[seq(n_loadings), ] %>%
+      rownames()
+    pc2_genes <- loadings %>%
+      as.data.frame() %>%
+      arrange(-abs(!!sym(paste0("PC", dims[2])))) %>%
+      .[seq(n_loadings), ] %>%
+      rownames()
+  } else if (is(n_loadings, "character")) {
+    stopifnot(n_loadings %in% rownames(loadings))
+    pc1_genes <- loadings[n_loadings, ] %>%
+      rownames()
+    pc2_genes <- pc1_genes
+  }
+
+  genes2plot <- unique(pc1_genes, pc2_genes)
+
+  r <- min(
+    (max(pca_object[, dims[1]]) - min(pca_object[, dims[1]]) /
+      (max(loadings[, dims[1]]) - min(loadings[, dims[1]]))),
+    (max(pca_object[, dims[2]]) - min(pca_object[, dims[2]]) /
+      (max(loadings[, dims[2]]) - min(loadings[, dims[2]])))
+  )
+
+  loadings2plot <- loadings %>%
+    as.data.frame() %>%
+    rownames_to_column() %>%
+    dplyr::select(c(rowname, paste0("PC", dims[1]), paste0("PC", dims[2]))) %>%
+    filter(rowname %in% genes2plot) %>%
+    mutate(
+      x_end = caculate_coor_end((!!sym(paste0("PC", dims[1]))), r),
+      y_end = caculate_coor_end((!!sym(paste0("PC", dims[2]))), r)
+    )
+
+
+  plotPCA(spe_object,
+    dims = dims,
+    precomputed = precomputed, assay = assay, ...
+  ) +
+    geom_segment(
+      data = loadings2plot,
+      aes(
+        x = arrow_x, y = arrow_y,
+        xend = x_end,
+        yend = y_end
+      ),
+      arrow = arrow(length = unit(1 / 2, "picas"), ends = "last"),
+      color = "black",
+      size = .5,
+      alpha = 1,
+      show.legend = NA
+    ) +
+    ggrepel::geom_text_repel(
+      data = loadings2plot,
+      aes(
+        label = rowname,
+        x = x_end,
+        y = y_end,
+        hjust = 0
+      ),
+      color = "black",
+      size = 3
+    )
 }

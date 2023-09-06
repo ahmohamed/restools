@@ -89,8 +89,7 @@ plotSpots <- function(plotdf, isSPEList, rl = 1, ...) {
 
   # tidystyle recommends no explicit return statements at end of functions
   p1 = ggplot2::ggplot(plotdf, ggplot2::aes(pxl_col_in_fullres, pxl_row_in_fullres, !!!aesmap)) +
-    ggplot2::geom_point(pch = 19) +
-    ggplot2::update_geom_defaults('point', defaultmap) +
+    do.call(ggplot2::geom_point, append(defaultmap, list(pch=19))) + 
     vissE::bhuvad_theme(rl) +
     theme(
       axis.text = element_blank()

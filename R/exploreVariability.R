@@ -19,6 +19,14 @@ setGeneric("explorePCVariability",
                     maxdim = 25,
                     precomputed = NULL) standardGeneric("explorePCVariability"))
 
+#' @export
+setGeneric("getPCVariability",
+           function(edata,
+                    annots,
+                    maxdim = 25,
+                    precomputed = NULL) standardGeneric("getPCVariability"))
+
+
 #' @rdname explorePCVariability
 setMethod("explorePCVariability",
           signature('DGEList','ANY', 'ANY', 'ANY'),
@@ -76,6 +84,24 @@ setMethod("explorePCVariability",
             exploreDRVariability_intl(drmat, sdata)
           })
 
+#' @rdname explorePCVariability
+setMethod("getPCVariability",
+          signature('SummarizedExperiment','ANY', 'ANY', 'ANY'),
+          function(edata, annots, maxdim, precomputed){
+            #compute PCA
+            if (is.null(precomputed)) {
+              pcdata = calcPCA(SummarizedExperiment::assay(edata), maxdim)
+            } else {
+              pcdata = checkPrecomputedPCA(edata, precomputed)
+            }
+
+            #extract sample data
+            sdata = BiocGenerics::as.data.frame(SummarizedExperiment::colData(edata), optional = TRUE)
+            sdata = extractAnnots(sdata, rlang::enquo(annots))
+            #create data structure
+            drmat = pmatPC_intl(pcdata, maxdim)
+            getDRVariability_intl(drmat, sdata)
+          })
 
 extractAnnots <- function(sdata, annots) {
   sdata = dplyr::select(sdata, !!annots)
@@ -168,4 +194,25 @@ exploreDRVariability_intl <- function(drmat, sdata) {
       )
     }
   )
+}
+
+getDRVariability_intl <- function(drmat, sdata) {
+  #convert to factors where needed
+  sdata = as.data.frame(lapply(sdata, function(x) {
+    if(!is(x, 'numeric'))
+      factor(x)
+    else
+      x
+  }))
+
+  #specify model
+  fit = lm(drmat ~ ., data = sdata)
+  plotmat = lapply(summary(stats::aov(fit)), function(x) x[['Pr(>F)']])
+  plotmat = do.call(rbind, plotmat)
+  plotmat = plotmat[, 1:ncol(sdata), drop = FALSE]
+  colnames(plotmat) = colnames(sdata)
+  rownames(plotmat) = colnames(drmat)
+
+  #adjust p.values
+  apply(plotmat, 2, stats::p.adjust)
 }
